@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Expert - Student Nomination & SME Learning Studio</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Professional LMS Learning & Activity Studio with DA, ML, AI Training Content, PDF Upload/Extract, PDF Printing, WhatsApp Sharing (9346767185), and Interactive Nomination Wheels.">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome 6 Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- PDF.js CDN for Client-side PDF Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased min-h-screen flex flex-col justify-between bg-slate-100 text-slate-900">
+
+    <!-- Hidden Print Container for PDF Export -->
+    <div id="pdfPrintContainer" class="hidden print-only"></div>
+
+    <!-- LMS Enterprise Header Bar -->
+    <header class="w-full bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Trainer Profile & Session Title -->
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="openModal('profileModal')" title="Click to customize Trainer info">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-lg shadow">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm sm:text-base font-extrabold text-white flex items-center space-x-2">
+                        <span id="displayTrainerName">Trainer Siva</span>
+                        <i class="fa-solid fa-pen-to-square text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition"></i>
+                    </h1>
+                    <p class="text-xs text-slate-300 truncate max-w-[200px] sm:max-w-xs" id="displaySessionTitle">Data Analytics & AI Masterclass</p>
+                </div>
+            </div>
+
+            <!-- Header Toolbar -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                
+                <!-- Share to WhatsApp Button (Target: 9346767185) -->
+                <button onclick="shareToWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Share Session Notes to WhatsApp (9346767185)">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span class="hidden sm:inline">WhatsApp Group</span>
+                </button>
+
+                <!-- Print PDF Notes Button -->
+                <button onclick="printSessionPDF()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Export PDF / Print Session Notes">
+                    <i class="fa-solid fa-file-pdf text-sm"></i>
+                    <span class="hidden sm:inline">PDF Notes</span>
+                </button>
+
+                <!-- Activity Timer -->
+                <button onclick="openModal('timerModal')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 transition" title="Activity Timer">
+                    <i class="fa-solid fa-stopwatch text-base"></i>
+                </button>
+
+                <!-- Team Generator -->
+                <button onclick="openModal('teamsModal')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 transition" title="Team Generator">
+                    <i class="fa-solid fa-people-group text-base"></i>
+                </button>
+
+                <!-- Saved Rosters -->
+                <button onclick="loadSavedRosterPrompt()" class="hidden md:flex items-center space-x-1 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition">
+                    <i class="fa-solid fa-folder-open text-blue-400"></i>
+                    <span>Rosters</span>
+                </button>
+
+                <!-- Sound Toggle -->
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition" title="Toggle Sound SFX">
+                    <i class="fa-solid fa-volume-high text-blue-400 text-base"></i>
+                </button>
+
+                <!-- Auto-Remove Toggle -->
+                <button id="autoRemoveToggleBtn" onclick="toggleAutoRemove()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 transition">
+                    Auto-Remove: OFF
+                </button>
+
+                <!-- LMS Theme Selector -->
+                <select id="themeSelect" onchange="changeTheme(this.value)" class="bg-slate-800 text-slate-200 text-xs font-medium rounded-xl px-2.5 py-2 border border-slate-700 focus:outline-none cursor-pointer">
+                    <option value="default">🏛️ Canvas Slate</option>
+                    <option value="udemy">🎓 Udemy Purple</option>
+                    <option value="coursera">🌿 Coursera Teal</option>
+                    <option value="moodle">📙 Moodle Orange</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Dashboard -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT SECTION (7 Cols): Nomination Activities & Interactive Canvas -->
+            <div class="lg:col-span-7 flex flex-col space-y-5">
+                
+                <!-- Nomination Mode Switcher Tabs -->
+                <div class="flex items-center justify-between bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-none">
+                    <button id="modeBtn-wheel" onclick="setPickerMode('wheel')" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-blue-600 text-white shadow transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-spinner"></i>
+                        <span>Spin Wheel</span>
+                    </button>
+                    <button id="modeBtn-slot" onclick="setPickerMode('slot')" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-dice"></i>
+                        <span>Slot Machine</span>
+                    </button>
+                    <button id="modeBtn-box" onclick="setPickerMode('box')" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-gift"></i>
+                        <span>Mystery Box</span>
+                    </button>
+                    <button id="modeBtn-cards" onclick="setPickerMode('cards')" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>3D Cards</span>
+                    </button>
+                    <button id="modeBtn-raffle" onclick="setPickerMode('raffle')" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Raffle Draw</span>
+                    </button>
+                </div>
+
+                <!-- MODE 1: SPINNING WHEEL CANVAS PANEL -->
+                <div id="panel-wheel" class="glass-panel rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[460px]">
+                    
+                    <!-- Pointer Indicator -->
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 z-20 wheel-pointer pointer-events-none"></div>
+
+                    <!-- Canvas Wheel -->
+                    <div class="relative flex items-center justify-center">
+                        <canvas id="wheelCanvas" class="max-w-full drop-shadow-xl cursor-pointer" onclick="spinWheel()"></canvas>
+                        
+                        <!-- Center Spin Button -->
+                        <button onclick="spinWheel()" class="absolute w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-teal-500 text-white font-black text-lg tracking-wider shadow-xl flex items-center justify-center pulse-btn hover:scale-110 active:scale-95 transition border-4 border-white z-30">
+                            SPIN!
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mt-4 flex items-center space-x-2 font-medium">
+                        <i class="fa-solid fa-hand-pointer text-blue-600"></i>
+                        <span>Click Wheel or Center Button to Nominate Student</span>
+                    </p>
+                </div>
+
+                <!-- MODE 2: SLOT MACHINE PANEL -->
+                <div id="panel-slot" class="glass-panel rounded-3xl p-8 hidden flex flex-col items-center justify-center min-h-[460px] space-y-6">
+                    <div class="text-center">
+                        <h3 class="text-xl font-extrabold text-slate-900">Arcade Student Reel</h3>
+                        <p class="text-xs text-slate-500">Roll the reels to select today's presenter</p>
+                    </div>
+
+                    <div class="w-full max-w-md slot-reel relative">
+                        <div id="slotReelContent" class="flex flex-col items-center">
+                            <div class="slot-item text-slate-700">Ready to Roll!</div>
+                        </div>
+                    </div>
+
+                    <button onclick="spinSlotMachine()" class="px-8 py-3.5 rounded-2xl bg-blue-600 text-white font-extrabold text-lg shadow-lg hover:bg-blue-700 active:scale-95 transition flex items-center space-x-3">
+                        <i class="fa-solid fa-rotate text-amber-300 animate-spin"></i>
+                        <span>ROLL SLOTS!</span>
+                    </button>
+                </div>
+
+                <!-- MODE 3: MYSTERY BOXES PANEL -->
+                <div id="panel-box" class="glass-panel rounded-3xl p-6 hidden flex flex-col min-h-[460px]">
+                    <div class="mb-4 text-center">
+                        <h3 class="text-lg font-bold text-slate-900">Mystery Gift Boxes</h3>
+                        <p class="text-xs text-slate-500">Click any box to open and reveal the nominated student</p>
+                    </div>
+                    <div id="mysteryBoxGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 flex-1 items-center">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- MODE 4: 3D CARD DECK PANEL -->
+                <div id="panel-cards" class="glass-panel rounded-3xl p-6 hidden flex flex-col min-h-[460px]">
+                    <div class="mb-4 text-center">
+                        <h3 class="text-lg font-bold text-slate-900">3D Magic Card Deck</h3>
+                        <p class="text-xs text-slate-500">Flip a card to pick your nominee</p>
+                    </div>
+                    <div id="cardsDeckGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 items-center">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- MODE 5: GOLDEN RAFFLE DRAW PANEL -->
+                <div id="panel-raffle" class="glass-panel rounded-3xl p-8 hidden flex flex-col items-center justify-center min-h-[460px] space-y-6">
+                    <div class="text-center">
+                        <h3 class="text-xl font-bold text-slate-900">Golden Raffle Ticket</h3>
+                        <p class="text-xs text-slate-500">Draw a lucky ticket from the golden box</p>
+                    </div>
+
+                    <div id="raffleTicketBox" class="w-full max-w-md p-8 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-500 border-4 border-amber-200 shadow-xl text-center text-slate-950 transition transform">
+                        <i class="fa-solid fa-ticket text-6xl text-slate-900 mb-3"></i>
+                        <h4 class="text-2xl font-black uppercase tracking-widest">Golden Ticket</h4>
+                        <p class="text-xs font-bold uppercase opacity-80 mt-1">Official Student Nomination</p>
+                    </div>
+
+                    <button onclick="pickRaffleWinner()" class="px-8 py-3.5 rounded-2xl bg-amber-500 text-slate-950 font-black text-lg shadow-lg hover:bg-amber-400 active:scale-95 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-slate-900"></i>
+                        <span>DRAW TICKET</span>
+                    </button>
+                </div>
+
+                <!-- SUBJECT MATTER EXPERT (SME) TRAINING CONTENT HUB -->
+                <div class="glass-panel rounded-3xl p-6 shadow-md border border-slate-200 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-book-bookmark text-blue-600 text-lg"></i>
+                            <div>
+                                <h3 class="font-extrabold text-slate-900 text-base">Subject Matter Expert (SME) Training Notes</h3>
+                                <p class="text-xs text-slate-500">Customize via Written Text or PDF Upload</p>
+                            </div>
+                        </div>
+
+                        <!-- PDF Upload & Topic Selector Toolbar -->
+                        <div class="flex items-center space-x-2 flex-wrap gap-1">
+                            
+                            <!-- Hidden PDF Input -->
+                            <input type="file" id="pdfFileInput" accept="application/pdf" onchange="handlePdfUpload(event)" class="hidden">
+                            
+                            <!-- Upload PDF Button -->
+                            <button onclick="document.getElementById('pdfFileInput').click()" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center space-x-1 shadow" title="Upload & Extract PDF Notes">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Upload PDF</span>
+                            </button>
+
+                            <!-- Pre-loaded Topic Dropdown -->
+                            <select onchange="loadSmeTemplate(this.value)" class="bg-slate-100 text-slate-800 text-xs font-semibold rounded-xl px-3 py-1.5 border border-slate-300 focus:outline-none cursor-pointer">
+                                <option value="">📚 Pre-loaded Topics...</option>
+                                <optgroup label="📊 Data Analytics">
+                                    <option value="da_pandas">Python Pandas & Data Cleaning</option>
+                                    <option value="da_sql">SQL Query Optimization & Joins</option>
+                                </optgroup>
+                                <optgroup label="🤖 Machine Learning">
+                                    <option value="ml_supervised">Supervised ML: Regression & Classification</option>
+                                    <option value="ml_trees">Decision Trees & Random Forests</option>
+                                </optgroup>
+                                <optgroup label="🧠 Artificial Intelligence">
+                                    <option value="ai_neural">Deep Learning & Neural Networks</option>
+                                    <option value="ai_llm">Generative AI, LLMs & Prompting</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- PDF Status Badge & Topic Header -->
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex items-center space-x-2">
+                            <h4 id="smeTopicTitle" class="text-sm font-extrabold text-blue-700">Exploratory Data Analysis (EDA) & Feature Engineering</h4>
+                            <div id="pdfStatusBadge" class="hidden text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200"></div>
+                        </div>
+                        <button onclick="saveSmeContentFromInputs()" class="text-xs font-bold text-blue-600 hover:text-blue-800 underline">Save Notes</button>
+                    </div>
+
+                    <!-- 3 Core Instructional Sections (Written Text / PDF Extracted) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <!-- Today's Training Content -->
+                        <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200">
+                            <div class="flex items-center space-x-2 mb-2 text-blue-800 font-bold text-xs">
+                                <i class="fa-solid fa-chalkboard"></i>
+                                <span>1. Today's Training Content</span>
+                            </div>
+                            <textarea id="smeTodayContentInput" rows="6" placeholder="Type or paste today's content, or upload PDF above..." class="w-full bg-white border border-blue-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono leading-relaxed"></textarea>
+                        </div>
+
+                        <!-- Hands-on Practicals & Labs -->
+                        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                            <div class="flex items-center space-x-2 mb-2 text-emerald-800 font-bold text-xs">
+                                <i class="fa-solid fa-flask"></i>
+                                <span>2. Hands-on Practicals & Lab</span>
+                            </div>
+                            <textarea id="smePracticalsInput" rows="6" placeholder="Type practical tasks & dataset links..." class="w-full bg-white border border-emerald-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-500 font-mono leading-relaxed"></textarea>
+                        </div>
+
+                        <!-- Revision of Previous Class -->
+                        <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                            <div class="flex items-center space-x-2 mb-2 text-amber-800 font-bold text-xs">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>3. Revision of Previous Class</span>
+                            </div>
+                            <textarea id="smeRevisionInput" rows="6" placeholder="Type revision recap points..." class="w-full bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"></textarea>
+                        </div>
+
+                    </div>
+
+                    <!-- Bottom Action Bar for Share & Print -->
+                    <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-200 gap-2">
+                        <span class="text-[11px] text-slate-500 font-medium">Ready to share session notes via WhatsApp Group <strong>9346767185</strong> or Export PDF</span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="shareToWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center space-x-1.5 shadow">
+                                <i class="fa-brands fa-whatsapp text-base"></i>
+                                <span>Share to WhatsApp (9346767185)</span>
+                            </button>
+                            <button onclick="printSessionPDF()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center space-x-1.5 shadow">
+                                <i class="fa-solid fa-print text-sm"></i>
+                                <span>Print / Export PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT SECTION (5 Cols): Student Roster & Live Add Panel -->
+            <div class="lg:col-span-5 flex flex-col space-y-4">
+                
+                <!-- Student Roster Container -->
+                <div class="glass-panel rounded-3xl p-5 flex flex-col flex-1 shadow-md">
+                    
+                    <!-- Header Bar -->
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-users text-blue-600 text-lg"></i>
+                            <h3 class="font-bold text-slate-900 text-base">Student Roster</h3>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                            <span id="studentCount">0</span> Students
+                        </span>
+                    </div>
+
+                    <!-- Quick Add Single Student Input -->
+                    <div class="flex items-center space-x-2 mb-3">
+                        <input type="text" id="newStudentInput" onkeydown="if(event.key === 'Enter') addSingleStudent()" placeholder="Type student name and press Enter..." class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500">
+                        <button onclick="addSingleStudent()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add</span>
+                        </button>
+                    </div>
+
+                    <!-- Roster Utilities Toolbar -->
+                    <div class="grid grid-cols-4 gap-1.5 mb-3">
+                        <button onclick="openModal('bulkModal')" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold transition flex items-center justify-center space-x-1 border border-slate-200">
+                            <i class="fa-solid fa-paste text-blue-600"></i>
+                            <span>Bulk</span>
+                        </button>
+                        <button onclick="shuffleStudents()" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold transition flex items-center justify-center space-x-1 border border-slate-200">
+                            <i class="fa-solid fa-shuffle text-purple-600"></i>
+                            <span>Shuffle</span>
+                        </button>
+                        <button onclick="sortStudents()" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold transition flex items-center justify-center space-x-1 border border-slate-200">
+                            <i class="fa-solid fa-arrow-down-a-z text-amber-600"></i>
+                            <span>Sort</span>
+                        </button>
+                        <button onclick="clearAllStudents()" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 text-[11px] font-semibold transition flex items-center justify-center space-x-1 border border-slate-200">
+                            <i class="fa-solid fa-trash text-red-500"></i>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+
+                    <!-- Scrollable Student List -->
+                    <div id="studentListContainer" class="flex-1 max-h-[320px] overflow-y-auto space-y-1.5 pr-1">
+                        <!-- Dynamic Student Items Rendered Here -->
+                    </div>
+
+                    <!-- Preset Demo Roster Quick Button -->
+                    <div class="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
+                        <button onclick="saveCurrentRoster()" class="text-xs text-slate-600 hover:text-blue-700 flex items-center space-x-1 font-medium transition">
+                            <i class="fa-solid fa-bookmark text-blue-600"></i>
+                            <span>Save Roster Preset</span>
+                        </button>
+                        <button onclick="loadDemoStudents()" class="text-xs text-blue-600 hover:text-blue-800 font-bold transition">
+                            Reset Demo Names
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Winners / Nominated Log Section -->
+                <div class="glass-panel rounded-3xl p-5 shadow-md border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-trophy text-amber-500"></i>
+                            <h4 class="font-bold text-slate-900 text-sm">Nomination History</h4>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-amber-700 font-extrabold"><span id="winnersCount">0</span> Picked</span>
+                            <button onclick="clearWinners()" class="px-2 py-0.5 rounded-md bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold transition flex items-center space-x-1" title="Clear all nomination history">
+                                <i class="fa-solid fa-trash-can text-[9px]"></i>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="winnersListContainer" class="max-h-[140px] overflow-y-auto space-y-1.5 pr-1">
+                        <!-- Dynamic Winners Rendered Here -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL 1: WINNER CELEBRATION MODAL -->
+    <div id="winnerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-md w-full p-8 text-center animate-modal relative border-2 border-amber-400 shadow-2xl">
+            
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-lg">
+                <i class="fa-solid fa-crown text-4xl animate-bounce"></i>
+            </div>
+
+            <p class="text-xs font-black uppercase tracking-widest text-amber-600 mb-1">🎉 Congratulations! 🎉</p>
+            <h2 class="text-xs text-slate-500 font-semibold mb-2">Nominated Student:</h2>
+
+            <!-- Winner Name -->
+            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-300 mb-6">
+                <h3 id="winnerNameDisplay" class="text-2xl sm:text-3xl font-black text-amber-900 truncate"></h3>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onclick="continueAfterWinner(true)" class="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow transition flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-user-minus"></i>
+                    <span>Remove & Spin Next</span>
+                </button>
+                <button onclick="continueAfterWinner(false)" class="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Keep & Spin Again</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: BULK STUDENT PASTE MODAL -->
+    <div id="bulkModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 animate-modal">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-paste text-blue-600"></i>
+                    <span>Bulk Edit Roster</span>
+                </h3>
+                <button onclick="closeModal('bulkModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 mb-2">Paste student names below (one name per line):</p>
+            <textarea id="bulkStudentInput" rows="10" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono"></textarea>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button onclick="closeModal('bulkModal')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200">Cancel</button>
+                <button onclick="applyBulkStudents()" class="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700">Save Roster</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: TRAINER PROFILE CUSTOMIZATION -->
+    <div id="profileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-md w-full p-6 animate-modal">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-user-gear text-blue-600"></i>
+                    <span>Trainer Branding</span>
+                </h3>
+                <button onclick="closeModal('profileModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Trainer / Host Name</label>
+                    <input type="text" id="trainerNameInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Session / Class Title</label>
+                    <input type="text" id="sessionTitleInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeModal('profileModal')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200">Cancel</button>
+                <button onclick="updateTrainerProfile()" class="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ACTIVITY COUNTDOWN TIMER -->
+    <div id="timerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-sm w-full p-6 text-center animate-modal">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-stopwatch text-amber-500"></i>
+                    <span>Activity Timer</span>
+                </h3>
+                <button onclick="closeModal('timerModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="py-6 px-4 rounded-2xl bg-slate-900 text-amber-400 my-2">
+                <span id="timerDisplay" class="text-5xl font-black tracking-wider font-mono">05:00</span>
+            </div>
+
+            <div class="flex justify-center space-x-2 my-4">
+                <button onclick="setTimerPreset(60)" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200">1 Min</button>
+                <button onclick="setTimerPreset(180)" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200">3 Min</button>
+                <button onclick="setTimerPreset(300)" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200">5 Min</button>
+                <button onclick="setTimerPreset(600)" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200">10 Min</button>
+            </div>
+
+            <div class="flex justify-center space-x-3">
+                <button id="timerToggleBtn" onclick="toggleTimer()" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition">
+                    <i class="fa-solid fa-play mr-1"></i> Start
+                </button>
+                <button onclick="resetTimer()" class="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: AUTOMATED TEAM GENERATOR -->
+    <div id="teamsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 animate-modal max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-people-group text-blue-600"></i>
+                    <span>Automated Team Splitter</span>
+                </h3>
+                <button onclick="closeModal('teamsModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-4">
+                <label class="text-xs text-slate-600 font-medium">Split into:</label>
+                <select id="teamCountInput" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none">
+                    <option value="2">2 Teams</option>
+                    <option value="3">3 Teams</option>
+                    <option value="4">4 Teams</option>
+                    <option value="5">5 Teams</option>
+                </select>
+                <button onclick="generateTeams()" class="px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition">
+                    Generate Teams
+                </button>
+            </div>
+
+            <div id="teamsOutputContainer" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 pr-1">
+                <p class="col-span-full text-center text-xs text-slate-400 py-8">Click "Generate Teams" to split active students into equal groups!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Confetti Container -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- LMS Footer -->
+    <footer class="w-full border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
+        <p>Activity Expert LMS Platform • Data Analytics, Machine Learning & AI Training Studio</p>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script src="audio.js"></script>
+    <script src="confetti.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
